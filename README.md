@@ -19,48 +19,48 @@ To run you need OpenSSL (to generate and sign certificates), Java 8 and Docker i
 #### 1. Generate the CA to self sign the certificates
 
 ```sh
-$ openssl req -new -x509 -keyout ca-key -out ca-cert -days 365
+openssl req -new -x509 -keyout ca-key -out ca-cert -days 365
 ```
 This generates the files ```ca-cert``` and ```ca-key```
 
 #### 2. Generate keys and certificates for the Kafka Broker
 
 ```sh
-$ keytool -keystore keystore/kafka.server.keystore.jks -alias localhost -keyalg RSA -genkey
+keytool -keystore keystore/kafka.server.keystore.jks -alias localhost -keyalg RSA -genkey
 ```
 This generates the file ```keystore/kafka.server.keystore.jks```
 
 #### 3. Add the generated CA to the brokers’ truststore so that the brokers can trust this CA.
 
 ```sh
-$ keytool -keystore truststore/kafka.server.truststore.jks -alias CARoot -importcert -file ca-cert
+keytool -keystore truststore/kafka.server.truststore.jks -alias CARoot -importcert -file ca-cert
 ```
 
 #### 4. Export the certificate from the Kafka Broker keystore, generated above
 
 ```sh
-$ keytool -keystore keystore/kafka.server.keystore.jks -alias localhost -certreq -file cert-file-server
+keytool -keystore keystore/kafka.server.keystore.jks -alias localhost -certreq -file cert-file-server
 ```
 This generates the file ```cert-file-server```
 
 #### 5. Sign the cert-file-server using the CA created above
 
 ```sh
-$ openssl x509 -req -CA ca-cert -CAkey ca-key -in cert-file-server -out cert-server-signed -days 365 -CAcreateserial
+openssl x509 -req -CA ca-cert -CAkey ca-key -in cert-file-server -out cert-server-signed -days 365 -CAcreateserial
 ```
 This generates the file ```cert-server-signed```
 
 #### 6. Import both the certificate of the CA and the signed certificate into the Kafka Broker keystore
 
 ```sh
-$ keytool -keystore keystore/kafka.server.keystore.jks -alias CARoot -importcert -file ca-cert
-$ keytool -keystore keystore/kafka.server.keystore.jks -alias localhost -importcert -file cert-server-signed
+keytool -keystore keystore/kafka.server.keystore.jks -alias CARoot -importcert -file ca-cert
+keytool -keystore keystore/kafka.server.keystore.jks -alias localhost -importcert -file cert-server-signed
 ```
 
 #### 7. Create a credentials file for the Kafka Broker
 
 ```sh
-$ echo [password] > credentials
+echo [password] > credentials
 ```
 Where ```[password]``` was the password you used so far.
 If you didn't use the same password when asked for one, you need to create one credential file for each one and adjust the ```docker-compose.yml``` to reflect that.
@@ -73,7 +73,7 @@ Now we are going to issue a command to make sure everything is OK so far.
 Run the docker-compose:
 
 ```sh
-$ docker-compose up
+docker-compose up
 ```
 
 Wait until it is up and check if didn't show any error messages.
@@ -97,7 +97,7 @@ If there is something different for these parameters it is better to revise the 
 Now, issue the command to verify SSL handshake error (try to connect without cert/auth):
 
 ```sh
-$ openssl s_client -connect localhost:9093
+openssl s_client -connect localhost:9093
 ```
 
 You will see an output like this:
@@ -131,7 +131,7 @@ INFO [SocketServer listenerType=ZK_BROKER, nodeId=1] Failed authentication with 
 Now let's pass the certificate and key:
 
 ```sh
-$ openssl s_client -connect localhost:9093 -cert ca-cert -key ca-key
+openssl s_client -connect localhost:9093 -cert ca-cert -key ca-key
 ```
 
 And we should get the output and no handshake errors in docker-compose sysout:
@@ -153,36 +153,36 @@ Now for the easy part, we need to generate both truststore and keystore for the 
 #### 1. Create the Client Keystore
 
 ```sh
-$ keytool -keystore keystore/kafka.client.keystore.jks -alias localhost -keyalg RSA -genkey
+keytool -keystore keystore/kafka.client.keystore.jks -alias localhost -keyalg RSA -genkey
 ```
 This generates the file ```keystore/kafka.client.keystore.jks```
 
 #### 2. Add the generated CA to the clients’ truststore so that the clients can trust this CA
 
 ```sh
-$ keytool -keystore truststore/kafka.client.truststore.jks -alias CARoot -importcert -file ca-cert
+keytool -keystore truststore/kafka.client.truststore.jks -alias CARoot -importcert -file ca-cert
 ```
 This generates the file ```truststore/kafka.client.truststore.jks```
 
 #### 3. Export the certificate from the keystore
 
 ```sh
-$ keytool -keystore keystore/kafka.client.keystore.jks -alias localhost -certreq -file cert-file-client
+keytool -keystore keystore/kafka.client.keystore.jks -alias localhost -certreq -file cert-file-client
 ```
 This generates the file ```cert-file-client```
 
 #### 4. Sign the cert-file-client using the CA 
 
 ```sh
-$ openssl x509 -req -CA ca-cert -CAkey ca-key -in cert-file-client -out cert-client-signed -days 365 -CAcreateserial
+openssl x509 -req -CA ca-cert -CAkey ca-key -in cert-file-client -out cert-client-signed -days 365 -CAcreateserial
 ```
 This generates the file ```cert-client-signed```
 
 #### 5. Import both the certificate of the CA and the signed certificate into the client keystore
 
 ```sh
-$ keytool -keystore keystore/kafka.client.keystore.jks -alias CARoot -importcert -file ca-cert
-$ keytool -keystore keystore/kafka.client.keystore.jks -alias localhost -importcert -file cert-client-signed
+keytool -keystore keystore/kafka.client.keystore.jks -alias CARoot -importcert -file ca-cert
+keytool -keystore keystore/kafka.client.keystore.jks -alias localhost -importcert -file cert-client-signed
 ```
 
 And we're done!
